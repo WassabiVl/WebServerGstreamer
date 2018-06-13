@@ -13,11 +13,22 @@
 9) download the Libraries https://sourceforge.net/projects/pygobjectwin32/files/ or run /install/pygi.exe
 10) indicate location of python at C:\msys64\mingw32\bin
 11) include 4 libraries  farstreamer, gst-pluginds, gst-plugins-more, gst-plugins-extra, Gstreamer
-12) install anaconda
-13) conda install -c anaconda django for django
-14) pip install Django
-15) django-admin startproject mysite (create a new project)
-16) Run the web-server: python manage.py runserver
-17) choco install sqlite 
-18) conda install -c anaconda sqlalchemy 
-19) https://www.pythoncentral.io/how-to-install-sqlalchemy/
+
+### Django install
+1) install anaconda
+2) conda install -c anaconda django for django
+3) pip install Django
+4) django-admin startproject mysite (create a new project)
+5) Run the web-server: python manage.py runserver
+6) choco install sqlite 
+7) conda install -c anaconda sqlalchemy 
+10) https://www.pythoncentral.io/how-to-install-sqlalchemy/
+
+### Django useage
+1) tutorials at https://docs.djangoproject.com/en/2.0/intro/tutorial01/
+2) python manage.py migrate ( to migrate database)
+3) python manage.py startapp polls (create a start app named )
+4) make migrations when changing Model: python manage.py migrate
+5) migrate new model: python manage.py sqlmigrate polls 0001
+6) apply to database: python manage.py migrate
+
