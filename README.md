@@ -10,13 +10,11 @@
 
 ### Django install
 
-1) install anaconda
-2) conda install -c anaconda django for django
-3) pip install Django
+1) pip install django
 4) django-admin startproject mysite (create a new project)
 5) Run the web-server: python manage.py runserver
-6) choco install sqlite     
-7) conda install -c anaconda sqlalchemy 
+6) pip install sqlite     
+7) pip install sqlalchemy 
 10) https://www.pythoncentral.io/how-to-install-sqlalchemy/
 
 
@@ -24,7 +22,7 @@
 1) tutorials at https://docs.djangoproject.com/en/2.0/intro/tutorial01/
 2) python manage.py migrate ( to migrate database)
 3) python manage.py startapp polls (create a start app named )
-4) make migrations when changing Model: python manage.py migrate
+4) make migrations when changing Model: python manage.py makemigrations
 5) migrate new model: python manage.py sqlmigrate polls 0001
 6) apply to database: python manage.py migrate
 
