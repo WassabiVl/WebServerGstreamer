@@ -1,8 +1,5 @@
 django
 alabaster==0.7.10
-anaconda-client==1.6.9
-anaconda-navigator==1.7.0
-anaconda-project==0.8.2
 asn1crypto==0.24.0
 astroid==1.6.1
 astropy==2.0.3
