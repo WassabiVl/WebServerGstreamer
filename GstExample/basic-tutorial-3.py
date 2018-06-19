@@ -15,6 +15,7 @@ import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 GObject.threads_init()
+gi.require_version('Gtk', '3.0')
 Gst.init(None)
 
 
@@ -23,7 +24,7 @@ data = dict()
 # Handler for the pad-added signal
 
 
-def pad_added_handler(src, new_pad, data):
+def pad_added_handler(src, new_pad, dataPAD):
     print("Received new pad '%s' from '%s':" % (new_pad.get_name(),
                                                 src.get_name()))
 
@@ -41,7 +42,7 @@ def pad_added_handler(src, new_pad, data):
         return
 
     # Attempt the link
-    ret = new_pad.link(data["convert"].get_static_pad("sink"))
+    ret = new_pad.link(dataPAD["convert"].get_static_pad("sink"))
     return
 
 
