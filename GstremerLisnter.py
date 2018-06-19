@@ -7,30 +7,33 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import GObject, Gst
 
 
+#  the reciver
+#  gst-launch-1.0 -v udpsrc port=5000  caps="application/x-rtp" ! rtpvp8depay ! vp8dec ! videoconvert ! autovideosink
 def main():
+    #  initiate gstreamer
     GObject.threads_init()
     Gst.init(None)
     pipeline = Gst.Pipeline()
-    udpsrc = Gst.ElementFactory.make('udpsrc', 'src')
-    pipeline.add(udpsrc)
+
+    # create the parts of the pipeline
+    udpsrc = Gst.ElementFactory.make('udpsrc', Gst.ELEMENT_FACTORY_KLASS_SRC)
     udpsrc.set_property("port", 5000)
     caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=20/1")
     udpsrc.set_property("caps", caps)
     rtpvp8depay = Gst.ElementFactory.make('rtpvp8depay', None)
-
     vp8dec = Gst.ElementFactory.make('vp8dec', None)
-
     videoconvert = Gst.ElementFactory.make('videoconvert', "convert")
-
     videosink = Gst.ElementFactory.make("autovideosink", "video-output")
 
+    # check if the parts can be created
     if not rtpvp8depay or not udpsrc or not vp8dec or not pipeline or not videoconvert:
         print("Not all elements could be created.", file=sys.stderr)
         exit(-1)
-    pipeline.add(rtpvp8depay)
-    pipeline.add(vp8dec)
-    pipeline.add(videoconvert)
-    pipeline.add(videosink)
+
+    # add them to the pipeline in the proper order
+    pipeline.add(udpsrc, rtpvp8depay, vp8dec, videoconvert, videosink)
+
+    # link the elements in order
     udpsrc.link(rtpvp8depay)
     rtpvp8depay.link(vp8dec)
     vp8dec.link(videoconvert)
