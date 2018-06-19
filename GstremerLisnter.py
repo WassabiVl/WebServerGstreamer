@@ -7,7 +7,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import GObject, Gst
 
 
-#  the reciver
+#  the receiver
 #  gst-launch-1.0 -v udpsrc port=5000  caps="application/x-rtp" ! rtpvp8depay ! vp8dec ! videoconvert ! autovideosink
 def main():
     #  initiate gstreamer

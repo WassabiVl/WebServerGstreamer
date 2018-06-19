@@ -49,7 +49,7 @@ msg = bus.timed_pop_filtered(
     Gst.CLOCK_TIME_NONE, Gst.MessageType.ERROR | Gst.MessageType.EOS)
 
 # Parse message
-if (msg):
+if msg:
     if msg.type == Gst.MessageType.ERROR:
         err, debug = msg.parse_error()
         print("Error received from element %s: %s" % (
