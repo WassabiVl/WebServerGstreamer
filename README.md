@@ -5,7 +5,9 @@
 
 1) install python v3.4.3
 2) install install/pygi.exe
-3) you are done
+3) python -m pip install --upgrade pip (important)
+4) pip install -r requirment.txt
+5) done
 
 
 ### Django install
