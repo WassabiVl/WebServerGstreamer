@@ -35,4 +35,8 @@
 ### django CMS
 1) http://docs.django-cms.org/en/latest/introduction/install.html
 
+## intelisense python
+https://github.com/IntelRealSense/librealsense/tree/development/wrappers/python
+https://github.com/toinsson/pyrealsense
+
 
