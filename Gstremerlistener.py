@@ -8,7 +8,14 @@ from gi.repository import GObject, Gst
 
 
 #  the receiver
-#  gst-launch-1.0 -v udpsrc port=5000  caps="application/x-rtp" ! rtpvp8depay ! vp8dec ! videoconvert ! autovideosink
+#  gst-launch-1.0 -v udpsrc port=5000 caps="application/x-rtp" ! rtpvp8depay ! vp8dec ! videoconvert ! autovideosink
+
+# the full code gst-launch-1.0 -v udpsrc port=5000  caps="application/x-rtp" ! rtpvp8depay ! vp8dec ! alpha
+# method=green ! mixer.sink_0 \ udpsrc port=5001  caps="application/x-rtp" ! rtpvp8depay ! vp8dec ! alpha method=green
+#  target-r=0 target-b=0 target-g=0 black-sensitivity=128 white-sensitivity=0 ! mixer.sink_1 \ udpsrc port=5002
+# caps="application/x-rtp" ! rtpvp8depay ! vp8dec ! alpha method=custom target-r=0 target-b=0 target-g	=0
+# black-sensitivity=128 white-sensitivity=0 ! mixer.sink_2 \ videomixer name=mixer sink_0::zorder=2 sink_1::zorder=1
+# sink_2::zorder=2 ! \ videoconvert ! autovideosink
 def main():
     #  initiate gstreamer
     GObject.threads_init()
@@ -16,10 +23,15 @@ def main():
     pipeline = Gst.Pipeline()
 
     # create the parts of the pipeline
+    #  first source
     udpsrc = Gst.ElementFactory.make('udpsrc', Gst.ELEMENT_FACTORY_KLASS_SRC)
     udpsrc.set_property("port", 5000)
     caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=20/1")
     udpsrc.set_property("caps", caps)
+    alphacolor = Gst.ElementFactory.make("alpha", "alpha")
+    alphacolor.set_property("method", "green")
+    mixer = Gst.ElementFactory.make("videomixer", "mixer")
+
     rtpvp8depay = Gst.ElementFactory.make('rtpvp8depay', None)
     vp8dec = Gst.ElementFactory.make('vp8dec', None)
     videoconvert = Gst.ElementFactory.make('videoconvert', "convert")
@@ -65,7 +77,6 @@ def main():
                       (old_state.value_nick, new_state.value_nick))
         else:
             print("Unexpected message received.", file=sys.stderr)
-
     # Free resources
     pipeline.set_state(Gst.State.NULL)
 

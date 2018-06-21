@@ -7,7 +7,8 @@ from .models import Question
 
 def index(request):
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    context = {'latest_question_list': latest_question_list}
+    context = {'latest_question_list': latest_question_list,
+               'url': '<video src="udp://12:5004" x-bs-stream-timeout="0">'}
     return render(request, 'polls/index.html', context)
 
 
