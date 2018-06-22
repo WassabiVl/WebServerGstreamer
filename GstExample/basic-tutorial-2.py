@@ -18,10 +18,13 @@ Gst.init(None)
 
 # Create the elements
 source = Gst.ElementFactory.make("videotestsrc", "source")
-sink = Gst.ElementFactory.make("autovideosink", "sink")
+# sink2 = Gst.ElementFactory.make("autovideosink", "sink")
+sink = Gst.ElementFactory.make("udpsink", "sink")
+sink.set_property("host", '127.0.0.1')
+sink.set_property("port", 5000)
 
 # Create the empty pipeline
-pipeline = Gst.Pipeline.new("test-pipeline")
+pipeline = Gst.Pipeline()
 
 if not source or not sink or not pipeline:
     print("Not all elements could be created.", file=sys.stderr)
@@ -30,7 +33,11 @@ if not source or not sink or not pipeline:
 # Build the pipeline
 pipeline.add(source)
 pipeline.add(sink)
+# pipeline.add(sink2)
 if not Gst.Element.link(source, sink):
+    print("Elements could not be linked.", file=sys.stderr)
+    exit(-1)
+if not Gst.Element.link(sink, sink2):
     print("Elements could not be linked.", file=sys.stderr)
     exit(-1)
 

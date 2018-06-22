@@ -14,12 +14,13 @@ import sys
 import gi
 
 gi.require_version('Gst', '1.0')
-from gi.repository import Gst
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gst, Gtk
 Gst.init(None)
 
 # Build the pipeline
 pipeline = Gst.parse_launch(
-    "playbin uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm")
+    "player uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm")
 
 # Start playing
 pipeline.set_state(Gst.State.PLAYING)
