@@ -19,8 +19,7 @@ from gi.repository import Gst, Gtk
 Gst.init(None)
 
 # Build the pipeline
-pipeline = Gst.parse_launch(
-    "player uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm")
+pipeline = Gst.parse_launch("videotestsrc ! videoconvert ! udpsink host=127.0.0.1 port=6000 sync=false")
 
 # Start playing
 pipeline.set_state(Gst.State.PLAYING)

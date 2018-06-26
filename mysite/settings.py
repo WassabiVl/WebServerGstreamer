@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bootstrap3',
+    'users'
 ]
 
 MIDDLEWARE = [
@@ -81,7 +82,22 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
+#  settings for user2
+AUTH_USER_MODEL = 'users.User'
+USERS_VERIFY_EMAIL = True
+USERS_AUTO_LOGIN_ON_ACTIVATION = True
+USERS_EMAIL_CONFIRMATION_TIMEOUT_DAYS = 3
+USERS_CREATE_SUPERUSER = DEBUG
+USERS_SUPERUSER_EMAIL = 'superuser@djangoproject.com'
+USERS_SUPERUSER_PASSWORD = 'django'
+USERS_SPAM_PROTECTION = True
+USERS_REGISTRATION_OPEN = True
+# Specifies minimum length for passwords:
+USERS_PASSWORD_MIN_LENGTH = 5
+#  Specifies maximum length for passwords:
+USERS_PASSWORD_MAX_LENGTH = None
+USERS_CHECK_PASSWORD_COMPLEXITY = True
+USERS_VALIDATE_EMAIL_DOMAIN = True
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators

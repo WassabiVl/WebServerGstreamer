@@ -37,9 +37,7 @@ pipeline.add(sink)
 if not Gst.Element.link(source, sink):
     print("Elements could not be linked.", file=sys.stderr)
     exit(-1)
-if not Gst.Element.link(sink, sink2):
-    print("Elements could not be linked.", file=sys.stderr)
-    exit(-1)
+
 
 # Modify the source's properties
 source.set_property("pattern", 0)
