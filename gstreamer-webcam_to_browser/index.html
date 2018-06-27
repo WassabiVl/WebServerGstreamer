@@ -27,7 +27,7 @@
 
   function sendCommandVector() {
     if (key_socket.readyState == 1) {
-      console.log("SENDING");
+      {#console.log('sending');#}
       key_socket.send(JSON.stringify(vector));
       window.setTimeout(sendCommandVector, 100);
     } else {
@@ -46,10 +46,10 @@
     key_socket = new WebSocket(KeyUri);
     key_socket.on_open = function(evt) {
       console.log("Command link established.");
-    }
+    };
     key_socket.on_error = function(evt) {
       console.log("Command error");
-    }
+    };
     key_socket.on_close = function(evt) {
       console.log("Command link lost");
     }
@@ -162,6 +162,11 @@
 
 </script>
 <body>
+<img height="360" src="http://127.0.0.1:8888">
+<video width="320" height="240" controls>
+    <source src="http://127.0.0.1:8888/ws" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 <h2>WebSocket Test</h2>
 
 <div id="output"></div>

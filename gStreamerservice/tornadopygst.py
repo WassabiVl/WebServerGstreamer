@@ -1,9 +1,8 @@
 import time
 import tornado
-from tornado import ioloop, web, websocket
+from tornado import ioloop, web, websocket, options
 from gStreamerservice import GstremerSendRecive
 import threading
-
 
 clients = dict()
 Ip_collection = []
@@ -20,6 +19,11 @@ class MainHandler(tornado.web.RequestHandler):
             pipeline = gstreamerSendReceive.main()
             gst_thread = threading.Thread(target=pipeline)
             gst_thread.start()
+        self.render("index.html")
+
+    def data_received(self, chunk):
+        print(chunk)
+        pass
 
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
@@ -48,7 +52,7 @@ def make_app():
         (r"/", MainHandler),
         (r"/", websocket),
         # (r"/", updserver2),
-    ])
+    ], debug=True)
 
 
 if __name__ == "__main__":
