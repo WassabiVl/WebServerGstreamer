@@ -41,13 +41,14 @@ class GstSendReceive:
                 #  video elements
                 src = Gst.ElementFactory.make("udpsrc", "source" + key.__str__())
                 src.set_property("port", 8880)
-                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=60/1")
+                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=30/1")
                 src.set_property("caps", caps)
                 src.set_property("buffer-size", 100000)
                 decodebin = Gst.ElementFactory.make("decodebin")
                 encoder = Gst.ElementFactory.make("jpegenc")
                 dencoder = Gst.ElementFactory.make("jpegdec")
                 videoconvert = Gst.ElementFactory.make("videoconvert")
+                jitter = Gst.ElementFactory.make('rtpjitterbuffer')
                 rtp_payload = Gst.ElementFactory.make("rtpgstdepay")
                 rtp_payload1 = Gst.ElementFactory.make("rtpgstpay", 'rtpgstpay' + key.__str__())
                 rtp_payload1.set_property('config-interval', 1)
@@ -62,16 +63,18 @@ class GstSendReceive:
                 sink = Gst.ElementFactory.make('autovideosink')
 
                 if not self.pipeline or not src or not rtp_payload or not dencoder or not videoconvert \
-                        or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink:
+                        or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink\
+                        or not jitter:
                     print("One of the elements wasn't create... Exiting\n")
                     exit(-1)
-                self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
+                self.pipeline.add(src, jitter, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
                                   udpsink)
                 # self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
                 #                   sink)
 
                 # video linking
-                src.link(rtp_payload)
+                src.link(jitter)
+                jitter.link(rtp_payload)
                 rtp_payload.link(dencoder)
                 dencoder.link(videoconvert)
                 videoconvert.link(decodebin)
