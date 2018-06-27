@@ -41,7 +41,7 @@ class GstSendReceive:
                 #  video elements
                 src = Gst.ElementFactory.make("udpsrc", "source" + key.__str__())
                 src.set_property("port", 8880)
-                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=20/1")
+                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=30/1")
                 src.set_property("caps", caps)
                 decodebin = Gst.ElementFactory.make("decodebin")
                 encoder = Gst.ElementFactory.make("vp8enc")
@@ -55,16 +55,18 @@ class GstSendReceive:
                 udpsink.set_property("port", 6000)
                 udpsrc = Gst.ElementFactory.make("udpsrc")
                 udpsrc.set_property("port", 5013)
-                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=20/1")
+                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=30/1")
                 udpsrc.set_property("caps", caps)
                 sink = Gst.ElementFactory.make('autovideosink')
 
-                if not self.pipeline or not src or not rtp_payload or not dencoder or not videoconvert or not decodebin \
-                        or not encoder or not rtp_payload1 or not rtpbin or not udpsink:
+                if not self.pipeline or not src or not rtp_payload or not dencoder or not videoconvert \
+                        or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink:
                     print("One of the elements wasn't create... Exiting\n")
                     exit(-1)
                 self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
                                   udpsink)
+                # self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
+                #                   sink)
 
                 # video linking
                 src.link(rtp_payload)
@@ -75,7 +77,7 @@ class GstSendReceive:
                 encoder.link(rtp_payload1)
                 rtp_payload1.link_pads('src', rtpbin, 'send_rtp_sink_0')
                 rtpbin.link_pads('send_rtp_src_0', udpsink, 'sink')
-                # udpsrc.link_pads('src', rtpbin, 'recv_rtcp_sink_0')
+                # rtpbin.link_pads('send_rtp_src_0', sink, 'sink')
 
             ret = self.pipeline.set_state(Gst.State.PLAYING)
             if ret == Gst.StateChangeReturn.FAILURE:

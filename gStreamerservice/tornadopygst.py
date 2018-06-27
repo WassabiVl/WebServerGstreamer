@@ -21,9 +21,9 @@ class MainHandler(tornado.web.RequestHandler):
             gst_thread.start()
         self.render("index.html")
 
-    def data_received(self, chunk):
-        print(chunk)
-        pass
+    # def data_received(self, chunk):
+    #     print(chunk)
+    #     pass
 
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
