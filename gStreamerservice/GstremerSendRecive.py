@@ -13,13 +13,14 @@ sink_port = 5000
 
 
 class GstSendReceive:
-    def __init__(self, sink_ip=None):
-        self.GObject = GObject.threads_init()
-        self.sink_ip = [] if sink_ip is None else sink_ip
+    def __init__(self):
+        Gst.init(None)
+        self.GObject = None
         self.pipeline = None
 
-    def main(self):
+    def main(self, sink_ip=None):
         Gst.init(None)
+        self.GObject = GObject.threads_init()
 
         def onPad(obj, pad, target):
             """
@@ -34,10 +35,11 @@ class GstSendReceive:
             pad.link(target.get_static_pad("sink"))
             return True
 
-        self.pipeline = Gst.Pipeline("mypipeline")
-        self.mixer = Gst.ElementFactory.make('videomixer', 'mixer')
-        if self.sink_ip:
-            for key, i in enumerate(self.sink_ip):
+        if sink_ip:
+            self.pipeline = Gst.Pipeline("mypipeline")
+            mixer = Gst.ElementFactory.make('videomixer', 'mixer')
+            self.pipeline.add(mixer)
+            for key, i in enumerate(sink_ip):
                 print(i, key)
                 #  video elements
                 src = Gst.ElementFactory.make("udpsrc", "source" + key.__str__())
@@ -67,11 +69,11 @@ class GstSendReceive:
 
                 if not self.pipeline or not src or not rtp_payload or not decoder or not videoconvert \
                         or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink \
-                        or not jitter or not self.mixer or not alpha:
+                        or not jitter or not mixer or not alpha:
                     print("One of the elements wasn't create... Exiting\n")
                     exit(-1)
                 self.pipeline.add(src, jitter, rtp_payload, decoder, videoconvert, decodebin, encoder, rtp_payload1,
-                                  rtpbin, alpha, udpsink, self.mixer)
+                                  rtpbin, alpha, udpsink)
                 # self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
                 #                   sink)
 
@@ -80,8 +82,8 @@ class GstSendReceive:
                 jitter.link(rtp_payload)
                 rtp_payload.link(decoder)
                 decoder.link(alpha)
-                alpha.link(self.mixer)
-                self.mixer.link(videoconvert)
+                alpha.link(mixer)
+                mixer.link(videoconvert)
                 videoconvert.link(decodebin)
                 decodebin.connect("pad-added", onPad, encoder)
                 encoder.link(rtp_payload1)
@@ -93,10 +95,8 @@ class GstSendReceive:
             if ret == Gst.StateChangeReturn.FAILURE:
                 print("Unable to set the pipeline to the playing state.", file=sys.stderr)
                 exit(-1)
-
             bus = self.pipeline.get_bus()
 
-            # Parse message
             while True:
                 message = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE, Gst.MessageType.STATE_CHANGED |
                                                  Gst.MessageType.ERROR | Gst.MessageType.EOS)
@@ -112,12 +112,12 @@ class GstSendReceive:
                 elif message.type == Gst.MessageType.STATE_CHANGED:
                     if isinstance(message.src, Gst.Pipeline):
                         old_state, new_state, pending_state = message.parse_state_changed()
-                        print("Pipeline state changed from %s to %s." %
-                              (old_state.value_nick, new_state.value_nick))
+                        yield print("Pipeline state changed from %s to %s." %
+                                    (old_state.value_nick, new_state.value_nick))
                 else:
-                    print("Unexpected message received.", file=sys.stderr)
+                    yield print("Unexpected message received.", file=sys.stderr)
             # Free resources
-            self.pipeline.set_state(Gst.State.NULL)
+            # self.pipeline.set_state(Gst.State.NULL)
 
     def get_ip(self, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -129,3 +129,10 @@ class GstSendReceive:
         finally:
             del s
         return client
+
+    def stop(self):
+        if self.pipeline:
+            self.pipeline.set_state(Gst.State.NULL)
+        Gst.init(None)
+        self.GObject = None
+        self.pipeline = None

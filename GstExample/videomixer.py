@@ -48,24 +48,16 @@ class Main:
         # filter2_src_pad = filter2.get_pad("src")
 
         mixer = Gst.ElementFactory.make("videomixer", "mixer")
-        # mixer.set_property("background",3)
-        if not mixer:
+        alpha = Gst.ElementFactory.make('alpha', 'alpha')
+        alpha.set_property('method', 'green')
+        if not alpha:
             print("mixer wasn't create... Exiting\n")
             exit(-1)
         # self.bin = Gst.Bin("my-bin")
         pad0 = Gst.Element.get_static_pad(source, "src")
-        if not pad0:
-            print("pad0 wasn't create... Exiting\n")
-            exit(-1)
         pad0_template = mixer.get_pad_template("sink_%u")
-        if not pad0_template:
-            print("pad0_template wasn't create... Exiting\n")
-            exit(-1)
         mixer_pad0 = Gst.Element.request_pad(mixer, pad0_template)
-        if not mixer_pad0:
-            print("pad0_template wasn't create... Exiting\n")
-            exit(-1)
-        if not Gst.Element.link_pads(mixer, pad0, mixer_pad0):
+        if not source.link(pad0):
             print("elements couldn't be linked... Exiting\n")
             exit(-1)
         # pad0 = Gst.Element.get_pad("sink_0")
