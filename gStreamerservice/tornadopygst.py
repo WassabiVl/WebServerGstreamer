@@ -11,14 +11,14 @@ Ip_collection = []
 class MainHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self):
-        # self.write(repr(self.request))
+        self.write(repr(self.request))
         if self.request.remote_ip not in Ip_collection:
             Ip_collection.append(self.request.remote_ip)
             gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
             pipeline = gstreamerSendReceive.main()
             gst_thread = threading.Thread(target=pipeline)
-            return gst_thread.start()
-        self.render("index.html")
+            gst_thread.start()
+            self.render("index.html")
 
     # def data_received(self, chunk):
     #     print(chunk)

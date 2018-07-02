@@ -35,6 +35,7 @@ class GstSendReceive:
             return True
 
         self.pipeline = Gst.Pipeline("mypipeline")
+        self.mixer = Gst.ElementFactory.make('videomixer', 'mixer')
         if self.sink_ip:
             for key, i in enumerate(self.sink_ip):
                 print(i, key)
@@ -46,7 +47,9 @@ class GstSendReceive:
                 src.set_property("buffer-size", 100000)
                 decodebin = Gst.ElementFactory.make("decodebin")
                 encoder = Gst.ElementFactory.make("jpegenc")
-                dencoder = Gst.ElementFactory.make("jpegdec")
+                alpha = Gst.ElementFactory.make('alpha', 'alpha' + key.__str__())
+                alpha.set_property('method', 'green')
+                decoder = Gst.ElementFactory.make("jpegdec")
                 videoconvert = Gst.ElementFactory.make("videoconvert")
                 jitter = Gst.ElementFactory.make('rtpjitterbuffer')
                 rtp_payload = Gst.ElementFactory.make("rtpgstdepay")
@@ -62,21 +65,23 @@ class GstSendReceive:
                 udpsrc.set_property("caps", caps)
                 sink = Gst.ElementFactory.make('autovideosink')
 
-                if not self.pipeline or not src or not rtp_payload or not dencoder or not videoconvert \
-                        or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink\
-                        or not jitter:
+                if not self.pipeline or not src or not rtp_payload or not decoder or not videoconvert \
+                        or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink \
+                        or not jitter or not self.mixer or not alpha:
                     print("One of the elements wasn't create... Exiting\n")
                     exit(-1)
-                self.pipeline.add(src, jitter, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
-                                  udpsink)
+                self.pipeline.add(src, jitter, rtp_payload, decoder, videoconvert, decodebin, encoder, rtp_payload1,
+                                  rtpbin, alpha, udpsink, self.mixer)
                 # self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
                 #                   sink)
 
                 # video linking
                 src.link(jitter)
                 jitter.link(rtp_payload)
-                rtp_payload.link(dencoder)
-                dencoder.link(videoconvert)
+                rtp_payload.link(decoder)
+                decoder.link(alpha)
+                alpha.link(self.mixer)
+                self.mixer.link(videoconvert)
                 videoconvert.link(decodebin)
                 decodebin.connect("pad-added", onPad, encoder)
                 encoder.link(rtp_payload1)
