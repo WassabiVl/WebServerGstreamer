@@ -36,12 +36,7 @@ class MainHandler(tornado.web.RequestHandler):
         #     gst_thread.start()
 
     def on_finish(self):
-        t = wrapper.main(Ip_collection)
-        a = t.__next__()
-        while True:
-            if a != t.__next__():
-                t.__next__()
-            break
+        wrapper.main(Ip_collection)
 
 
 class PortHandler(tornado.web.RequestHandler):
@@ -52,6 +47,8 @@ class PortHandler(tornado.web.RequestHandler):
         wrapper.add_port(source_port)
         source_port += 1
         Ip_collection.append(self.request.remote_ip)
+
+    def on_finish(self):
         wrapper.main(Ip_collection)
 
 def make_app():
