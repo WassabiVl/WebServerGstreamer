@@ -28,8 +28,8 @@ class MainHandler(tornado.web.RequestHandler):
                    '<input type="text" name="message">'
                    '<input type="submit" value="Submit">'
                    '</form></body></html>')
-        if self.request.remote_ip not in Ip_collection:
-            Ip_collection.append(self.request.remote_ip)
+        #if self.request.remote_ip not in Ip_collection:
+        Ip_collection.append(self.request.remote_ip)
 
         #     gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
         #     pipeline = gstreamerSendReceive.main()
@@ -42,6 +42,7 @@ class MainHandler(tornado.web.RequestHandler):
         while True:
             if a != t.__next__():
                 t.__next__()
+            break
 
 
 class PortHandler(tornado.web.RequestHandler):

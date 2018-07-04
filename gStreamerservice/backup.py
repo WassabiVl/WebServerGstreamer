@@ -10,7 +10,7 @@ from gi.repository import GObject, Gst
 DNS = '8.8.8.8'
 source_port = 6000
 sink_port = 5000
-port_list = []
+
 
 class GstSendReceive:
     def __init__(self):
@@ -38,11 +38,10 @@ class GstSendReceive:
         if sink_ip:
             self.pipeline = Gst.Pipeline("mypipeline")
             mixer = Gst.ElementFactory.make('videomixer', 'mixer')
-            videoconvert = Gst.ElementFactory.make("videoconvert")
-            if not self.pipeline or not mixer or not videoconvert:
-                print('Pipeline or mixer or mixer not created')
+            if not self.pipeline or not mixer:
+                print('Pipeline or mixer not created')
                 exit(-1)
-            self.pipeline.add(mixer, videoconvert)
+            self.pipeline.add(mixer)
             for key, i in enumerate(sink_ip):
                 print(i, key)
                 #  video elements
@@ -51,42 +50,43 @@ class GstSendReceive:
                 caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=30/1")
                 src.set_property("caps", caps)
                 src.set_property("buffer-size", 100000)
-                jitter = Gst.ElementFactory.make('rtpjitterbuffer')
-                rtp_payload = Gst.ElementFactory.make("rtpgstdepay")
+                decodebin = Gst.ElementFactory.make("decodebin")
+                encoder = Gst.ElementFactory.make("jpegenc")
                 alpha = Gst.ElementFactory.make('alpha', 'alpha' + key.__str__())
                 alpha.set_property('method', 'green')
                 decoder = Gst.ElementFactory.make("jpegdec")
-                if not src or not rtp_payload or not decoder  or not jitter or not mixer or not alpha:
-                    print("%s: %s elements wasn't create... Exiting\n")
-                    exit(-1)
-                self.pipeline.add(src, jitter, rtp_payload, decoder, alpha)
-                src.link(jitter)
-                jitter.link(rtp_payload)
-                rtp_payload.link(decoder)
-                decoder.link(alpha)
-                alpha.link(mixer)
-
-            mixer.link(videoconvert)
-
-            for key, i in enumerate(sink_ip):
-                decodebin = Gst.ElementFactory.make("decodebin")
+                videoconvert = Gst.ElementFactory.make("videoconvert")
+                jitter = Gst.ElementFactory.make('rtpjitterbuffer')
+                rtp_payload = Gst.ElementFactory.make("rtpgstdepay")
                 rtp_payload1 = Gst.ElementFactory.make("rtpgstpay", 'rtpgstpay' + key.__str__())
                 rtp_payload1.set_property('config-interval', 1)
                 rtpbin = Gst.ElementFactory.make('rtpbin', 'rtpbin' + key.__str__())
                 udpsink = Gst.ElementFactory.make("udpsink", 'sink' + key.__str__())
                 udpsink.set_property("host", i)
                 udpsink.set_property("port", 6000)
+                udpsrc = Gst.ElementFactory.make("udpsrc")
+                udpsrc.set_property("port", 5013)
+                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=60/1")
+                udpsrc.set_property("caps", caps)
                 sink = Gst.ElementFactory.make('autovideosink')
-                encoder = Gst.ElementFactory.make("jpegenc")
 
-                if not rtp_payload1 or not rtpbin or not udpsink or not sink or not decodebin or not encoder:
+                if not src or not rtp_payload or not decoder or not videoconvert \
+                        or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink \
+                        or not jitter or not mixer or not alpha:
                     print("%s: %s elements wasn't create... Exiting\n")
                     exit(-1)
-                self.pipeline.add(rtp_payload1, rtpbin, udpsink, decodebin, encoder)
+                self.pipeline.add(src, jitter, rtp_payload, decoder, videoconvert, decodebin, encoder, rtp_payload1,
+                                  rtpbin, alpha, udpsink)
                 # self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
                 #                   sink)
 
                 # video linking
+                src.link(jitter)
+                jitter.link(rtp_payload)
+                rtp_payload.link(decoder)
+                decoder.link(alpha)
+                alpha.link(mixer)
+                mixer.link(videoconvert)
                 videoconvert.link(decodebin)
                 decodebin.connect("pad-added", onPad, encoder)
                 encoder.link(rtp_payload1)
@@ -140,5 +140,3 @@ class GstSendReceive:
         self.GObject = None
         self.pipeline = None
 
-    def add_port(self, port):
-        port_list.append(port);
