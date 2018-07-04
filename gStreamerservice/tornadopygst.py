@@ -7,7 +7,6 @@ from tornado.platform import asyncio
 from tornado.httpclient import AsyncHTTPClient
 
 import GstremerSendRecive
-import threading
 
 clients = dict()
 Ip_collection = []
@@ -47,12 +46,13 @@ class MainHandler(tornado.web.RequestHandler):
 
 class PortHandler(tornado.web.RequestHandler):
     def get(self):
-        gstreamerSendReceive.stop()
         global source_port
+        self.write(str(source_port))
+        gstreamerSendReceive.stop()
         gstreamerSendReceive.add_port(source_port)
-        result = source_port
         source_port += 1
-        self.write(str(result))
+        Ip_collection.append(self.request.remote_ip)
+        gstreamerSendReceive.main(Ip_collection)
 
 def make_app():
     return tornado.web.Application([
