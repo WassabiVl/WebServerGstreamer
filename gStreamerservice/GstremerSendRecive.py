@@ -9,8 +9,6 @@ from gi.repository import GObject, Gst
 import _thread
 
 DNS = '8.8.8.8'
-source_port = 6000
-sink_port = 5000
 port_list = []
 stop = False
 
@@ -26,16 +24,11 @@ class GstSendReceive:
         caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=30/1")
         src.set_property("caps", caps)
         src.set_property("buffer-size", 100000)
-        jitter = Gst.ElementFactory.make('rtpjitterbuffer')
+        jitter = Gst.ElementFactory.make("rtpjitterbuffer")
         rtp_depay = Gst.ElementFactory.make("rtpgstdepay")
-        alpha = Gst.ElementFactory.make('alpha', 'alpha' + port.__str__())
-        alpha.set_property('method', 'green')
         decoder = Gst.ElementFactory.make("jpegdec")
-
-        if not src or not rtp_depay or not decoder or not jitter or not alpha:
-            print("%s: %s elements wasn't create... Exiting\n")
-            exit(-1)
-
+        alpha = Gst.ElementFactory.make("alpha", "alpha" + port.__str__())
+        alpha.set_property("method", "green")
         self.pipeline.add(src, jitter, rtp_depay, decoder, alpha)
 
         if first_element is not None:

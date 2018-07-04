@@ -6,13 +6,13 @@ from tornado.options import define, options
 from tornado.platform import asyncio
 from tornado.httpclient import AsyncHTTPClient
 
-import GstremerSendRecive
+import GStreamerWrapper
 
 clients = dict()
 Ip_collection = []
 define("port", default=8888, help="run on the given port", type=int)
 source_port = 5000
-gstreamerSendReceive = GstremerSendRecive.GstSendReceive()
+wrapper = GStreamerWrapper.GStreamerWrapper()
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -22,7 +22,7 @@ class JSONEncoder(json.JSONEncoder):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        gstreamerSendReceive.stop()
+        wrapper.stop()
         self.write('<html><body><form action="/myform" method="POST">'
                    '<input type="text" name="message">'
                    '<input type="submit" value="Submit">'
@@ -36,7 +36,7 @@ class MainHandler(tornado.web.RequestHandler):
         #     gst_thread.start()
 
     def on_finish(self):
-        t = gstreamerSendReceive.main(Ip_collection)
+        t = wrapper.main(Ip_collection)
         a = t.__next__()
         while True:
             if a != t.__next__():
@@ -48,11 +48,11 @@ class PortHandler(tornado.web.RequestHandler):
     def get(self):
         global source_port
         self.write(str(source_port))
-        gstreamerSendReceive.stop()
-        gstreamerSendReceive.add_port(source_port)
+        wrapper.stop()
+        wrapper.add_port(source_port)
         source_port += 1
         Ip_collection.append(self.request.remote_ip)
-        gstreamerSendReceive.main(Ip_collection)
+        wrapper.main(Ip_collection)
 
 def make_app():
     return tornado.web.Application([
