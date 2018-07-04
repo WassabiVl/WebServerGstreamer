@@ -10,7 +10,7 @@ from gi.repository import GObject, Gst
 DNS = '8.8.8.8'
 source_port = 6000
 sink_port = 5000
-
+port_list = []
 
 class GstSendReceive:
     def __init__(self):
@@ -136,3 +136,6 @@ class GstSendReceive:
         Gst.init(None)
         self.GObject = None
         self.pipeline = None
+
+    def add_port(self, port):
+        port_list.append(port);
