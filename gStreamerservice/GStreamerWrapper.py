@@ -23,7 +23,9 @@ class GStreamerWrapper:
         if self.pipeline_string != "":
             self.pipeline_string += " "
 
-        self.pipeline_string += "udpsrc port=" + str(port) + " caps=\"application/x-rtp, width=640, height=480, framerate=60/1\" buffer-size=100000 ! rtpjitterbuffer ! rtpgstdepay ! jpegdec ! alpha method=green ! mixer.sink_" + str(port)
+        self.pipeline_string += "udpsrc port=" + str(port) + \
+                                " caps=\"application/x-rtp, width=640, height=480, framerate=60/1\" buffer-size=100000 ! rtpjitterbuffer ! rtpgstdepay ! jpegdec ! alpha method=green ! mixer.sink_" + \
+                                str(port)
 
     def add_dest(self, sink_ip):
         # for testing
