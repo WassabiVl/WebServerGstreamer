@@ -6,21 +6,41 @@ import gi
 gi.require_version('Gst', '1.0')
 gi.require_version('Gtk', '3.0')
 from gi.repository import GObject, Gst
+import _thread
 
 DNS = '8.8.8.8'
-source_port = 6000
-sink_port = 5000
-
+port_list = []
+stop = False
 
 class GstSendReceive:
-    def __init__(self, sink_ip=None):
-        self.GObject = GObject.threads_init()
-        self.sink_ip = [] if sink_ip is None else sink_ip
+    def __init__(self):
+        Gst.init(None)
+        self.GObject = None
         self.pipeline = None
 
-    def main(self):
-        Gst.init(None)
+    def add_source(self, first_element, port):
+        src = Gst.ElementFactory.make("udpsrc", "source" + port.__str__())
+        src.set_property("port", port)
+        caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=30/1")
+        src.set_property("caps", caps)
+        src.set_property("buffer-size", 100000)
+        jitter = Gst.ElementFactory.make("rtpjitterbuffer")
+        rtp_depay = Gst.ElementFactory.make("rtpgstdepay")
+        decoder = Gst.ElementFactory.make("jpegdec")
+        alpha = Gst.ElementFactory.make("alpha", "alpha" + port.__str__())
+        alpha.set_property("method", "green")
+        self.pipeline.add(src, jitter, rtp_depay, decoder, alpha)
 
+        if first_element is not None:
+            first_element.link(src)
+
+        src.link(jitter)
+        jitter.link(rtp_depay)
+        rtp_depay.link(decoder)
+        decoder.link(alpha)
+        return alpha
+
+    def add_dest(self, sink_ip):
         def onPad(obj, pad, target):
             """
             :param obj: GstDecodeBin
@@ -34,85 +54,93 @@ class GstSendReceive:
             pad.link(target.get_static_pad("sink"))
             return True
 
-        self.pipeline = Gst.Pipeline("mypipeline")
-        if self.sink_ip:
-            for key, i in enumerate(self.sink_ip):
-                print(i, key)
+        for key, i in enumerate(sink_ip):
+            decodebin = Gst.ElementFactory.make("decodebin")
+            rtp_payload1 = Gst.ElementFactory.make("rtpgstpay", 'rtpgstpay' + key.__str__())
+            rtp_payload1.set_property('config-interval', 1)
+            rtpbin = Gst.ElementFactory.make('rtpbin', 'rtpbin' + key.__str__())
+            udpsink = Gst.ElementFactory.make("udpsink", 'sink' + key.__str__())
+            udpsink.set_property("host", i)
+            udpsink.set_property("port", 600)
+            sink = Gst.ElementFactory.make('autovideosink')
+            encoder = Gst.ElementFactory.make("jpegenc")
+
+            if not rtp_payload1 or not rtpbin or not udpsink or not sink or not decodebin or not encoder:
+                print("%s: %s elements wasn't create... Exiting\n")
+                exit(-1)
+            self.pipeline.add(rtp_payload1, rtpbin, udpsink, decodebin, encoder)
+            # self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
+            #                   sink)
+
+            # video linking
+            #videoconvert.link(decodebin)
+            decodebin.connect("pad-added", onPad, encoder)
+            encoder.link(rtp_payload1)
+            rtp_payload1.link_pads('src', rtpbin, 'send_rtp_sink_0')
+            rtpbin.link_pads('send_rtp_src_0', udpsink, 'sink')
+            # rtpbin.link_pads('send_rtp_src_0', sink, 'sink')
+
+    def check_bus(self):
+        global stop
+        bus = self.pipeline.get_bus()
+
+        while stop == False:
+            message = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE, Gst.MessageType.STATE_CHANGED | Gst.MessageType.ERROR | Gst.MessageType.EOS)
+
+            if message.type == Gst.MessageType.ERROR:
+                err, debug = message.parse_error()
+                print("Error received from element %s: %s" % (message.src.get_name(), err), file=sys.stderr)
+                print("Debugging information: %s" % debug, file=sys.stderr)
+                break
+            elif message.type == Gst.MessageType.EOS:
+                print("End-Of-Stream reached.")
+                break
+            elif message.type == Gst.MessageType.STATE_CHANGED:
+                if isinstance(message.src, Gst.Pipeline):
+                    old_state, new_state, pending_state = message.parse_state_changed()
+                    print("Pipeline state changed from %s to %s." % (old_state.value_nick, new_state.value_nick))
+
+                    if (new_state.value_nick == 'playing'):
+                        break
+            else:
+                print("Unexpected message received.", file=sys.stderr)
+
+    def main(self, sink_ip=None):
+        Gst.init(None)
+        self.GObject = GObject.threads_init()
+
+        if sink_ip:
+            self.pipeline = Gst.Pipeline("mypipeline")
+            last_element = None;
+
+            for key, i in enumerate(port_list):
+                print(key, i)
                 #  video elements
-                src = Gst.ElementFactory.make("udpsrc", "source" + key.__str__())
-                src.set_property("port", 8880)
-                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=30/1")
-                src.set_property("caps", caps)
-                src.set_property("buffer-size", 100000)
-                decodebin = Gst.ElementFactory.make("decodebin")
-                encoder = Gst.ElementFactory.make("jpegenc")
-                dencoder = Gst.ElementFactory.make("jpegdec")
-                videoconvert = Gst.ElementFactory.make("videoconvert")
-                jitter = Gst.ElementFactory.make('rtpjitterbuffer')
-                rtp_payload = Gst.ElementFactory.make("rtpgstdepay")
-                rtp_payload1 = Gst.ElementFactory.make("rtpgstpay", 'rtpgstpay' + key.__str__())
-                rtp_payload1.set_property('config-interval', 1)
-                rtpbin = Gst.ElementFactory.make('rtpbin', 'rtpbin' + key.__str__())
-                udpsink = Gst.ElementFactory.make("udpsink", 'sink' + key.__str__())
-                udpsink.set_property("host", i)
-                udpsink.set_property("port", 6000)
-                udpsrc = Gst.ElementFactory.make("udpsrc")
-                udpsrc.set_property("port", 5013)
-                caps = Gst.Caps("application/x-rtp, width=640, height=480, framerate=60/1")
-                udpsrc.set_property("caps", caps)
-                sink = Gst.ElementFactory.make('autovideosink')
+                last_element = self.add_source(last_element, i);
 
-                if not self.pipeline or not src or not rtp_payload or not dencoder or not videoconvert \
-                        or not decodebin or not encoder or not rtp_payload1 or not rtpbin or not udpsink or not sink\
-                        or not jitter:
-                    print("One of the elements wasn't create... Exiting\n")
-                    exit(-1)
-                self.pipeline.add(src, jitter, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
-                                  udpsink)
-                # self.pipeline.add(src, rtp_payload, dencoder, videoconvert, decodebin, encoder, rtp_payload1, rtpbin,
-                #                   sink)
+            mixer = Gst.ElementFactory.make("videomixer", "mixer")
+            videoconvert = Gst.ElementFactory.make("videoconvert")
+            test_sink = Gst.ElementFactory.make("autovideosink")
 
-                # video linking
-                src.link(jitter)
-                jitter.link(rtp_payload)
-                rtp_payload.link(dencoder)
-                dencoder.link(videoconvert)
-                videoconvert.link(decodebin)
-                decodebin.connect("pad-added", onPad, encoder)
-                encoder.link(rtp_payload1)
-                rtp_payload1.link_pads('src', rtpbin, 'send_rtp_sink_0')
-                rtpbin.link_pads('send_rtp_src_0', udpsink, 'sink')
-                # rtpbin.link_pads('send_rtp_src_0', sink, 'sink')
+            if not self.pipeline or not mixer or not videoconvert:
+                print('Pipeline or mixer or mixer not created')
+                exit(-1)
+
+           # self.pipeline.add(mixer, videoconvert)
+            self.pipeline.add(mixer, videoconvert, test_sink)
+            last_element.link(mixer)
+            mixer.link(videoconvert)
+            videoconvert.link(test_sink)
+
+            #self.add_dest(sink_ip)
 
             ret = self.pipeline.set_state(Gst.State.PLAYING)
+
             if ret == Gst.StateChangeReturn.FAILURE:
                 print("Unable to set the pipeline to the playing state.", file=sys.stderr)
                 exit(-1)
 
-            bus = self.pipeline.get_bus()
-
-            # Parse message
-            while True:
-                message = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE, Gst.MessageType.STATE_CHANGED |
-                                                 Gst.MessageType.ERROR | Gst.MessageType.EOS)
-                if message.type == Gst.MessageType.ERROR:
-                    err, debug = message.parse_error()
-                    print("Error received from element %s: %s" % (
-                        message.src.get_name(), err), file=sys.stderr)
-                    print("Debugging information: %s" % debug, file=sys.stderr)
-                    break
-                elif message.type == Gst.MessageType.EOS:
-                    print("End-Of-Stream reached.")
-                    break
-                elif message.type == Gst.MessageType.STATE_CHANGED:
-                    if isinstance(message.src, Gst.Pipeline):
-                        old_state, new_state, pending_state = message.parse_state_changed()
-                        print("Pipeline state changed from %s to %s." %
-                              (old_state.value_nick, new_state.value_nick))
-                else:
-                    print("Unexpected message received.", file=sys.stderr)
-            # Free resources
-            self.pipeline.set_state(Gst.State.NULL)
+            self.check_bus()
 
     def get_ip(self, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -124,3 +152,17 @@ class GstSendReceive:
         finally:
             del s
         return client
+
+    def stop(self):
+        global stop
+        stop = True;
+
+        if self.pipeline:
+            self.pipeline.set_state(Gst.State.NULL)
+
+        Gst.init(None)
+        self.GObject = None
+        self.pipeline = None
+
+    def add_port(self, port):
+        port_list.append(port);

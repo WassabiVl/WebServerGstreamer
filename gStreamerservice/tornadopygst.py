@@ -1,66 +1,73 @@
 import time
+import json
 import tornado
-from tornado import ioloop, web, websocket, options
-from gStreamerservice import GstremerSendRecive
-import threading
+from tornado import ioloop, web, websocket, options, httpserver
+from tornado.options import define, options
+from tornado.platform import asyncio
+from tornado.httpclient import AsyncHTTPClient
+
+import GStreamerWrapper
 
 clients = dict()
 Ip_collection = []
+define("port", default=8888, help="run on the given port", type=int)
+source_port = 5000
+wrapper = GStreamerWrapper.GStreamerWrapper()
 
+class JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        return json.JSONEncoder.default(self, o)
 
 class MainHandler(tornado.web.RequestHandler):
-    @tornado.web.asynchronous
     def get(self):
-        # self.write(repr(self.request))
-        print(self.request.remote_ip)  # get the Ip
-        if self.request.remote_ip not in Ip_collection:
-            Ip_collection.append(self.request.remote_ip)
-            gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
-            pipeline = gstreamerSendReceive.main()
-            gst_thread = threading.Thread(target=pipeline)
-            gst_thread.start()
-        self.render("index.html")
+        wrapper.stop()
+        self.write('<html><body><form action="/myform" method="POST">'
+                   '<input type="text" name="message">'
+                   '<input type="submit" value="Submit">'
+                   '</form></body></html>')
+        #if self.request.remote_ip not in Ip_collection:
+        Ip_collection.append(self.request.remote_ip)
 
-    # def data_received(self, chunk):
-    #     print(chunk)
-    #     pass
+        #     gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
+        #     pipeline = gstreamerSendReceive.main()
+        #     gst_thread = threading.Thread(target=pipeline)
+        #     gst_thread.start()
+
+    def on_finish(self):
+        wrapper.main(Ip_collection)
 
 
-class WebSocketHandler(tornado.websocket.WebSocketHandler):
-    def data_received(self, chunk):
-        pass
+class PortHandler(tornado.web.RequestHandler):
+    def get(self):
+        global source_port
+        self.write(str(source_port))
+        wrapper.stop()
+        wrapper.add_port(source_port)
+        source_port += 1
+        Ip_collection.append(self.request.remote_ip)
 
-    def open(self, *args):
-        self.id = self.get_argument("Id")
-        self.stream.set_nodelay(True)
-        clients[self.id] = {"id": self.id, "object": self}
-
-    def on_message(self, message):
-        """
-        when we receive some message we want some message handler..
-        for this example i will just print message to console
-        """
-        print("Client %s received a message : %s" % (self.id, message))
-
-    def on_close(self):
-        if self.id in clients:
-            del clients[self.id]
-
+    def on_finish(self):
+        wrapper.main(Ip_collection)
 
 def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
-        (r"/", websocket),
+        (r"/get_port/?", PortHandler)
+        # (r"/", websocket),
         # (r"/", updserver2),
-    ], debug=True)
+    ])
 
 
 if __name__ == "__main__":
+    tornado.options.parse_command_line()
     app = make_app()
-    app.listen(8888)
+    http_server = tornado.httpserver.HTTPServer(app)
+    http_server.listen(options.port)
     print("Starting GST thread...")
 
-    time.sleep(1)
+    # time.sleep(1)
 
     print("starting frame grabber thread")
     tornado.ioloop.IOLoop.current().start()
