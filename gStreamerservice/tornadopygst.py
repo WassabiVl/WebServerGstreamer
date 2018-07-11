@@ -22,23 +22,20 @@ class JSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-class MainHandler(tornado.web.RequestHandler):
-    def get(self):
-        wrapper.stop()
-        self.write('<html><body><form action="/myform" method="POST">'
-                   '<input type="text" name="message">'
-                   '<input type="submit" value="Submit">'
-                   '</form></body></html>')
-        if self.request.remote_ip not in Ip_collection:
-            Ip_collection.append(self.request.remote_ip)
+#class MainHandler(tornado.web.RequestHandler):
+ #   def get(self):
+  #      wrapper.stop()
+   #     self.write('<html><body>welcome to gstreamer, your Ip is' + self.request.remote_ip +' </body></html>')
+    #    if self.request.remote_ip not in Ip_collection:
+         #   Ip_collection.append(self.request.remote_ip)
 
         #     gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
         #     pipeline = gstreamerSendReceive.main()
         #     gst_thread = threading.Thread(target=pipeline)
         #     gst_thread.start()
 
-    def on_finish(self):
-        wrapper.main(Ip_collection)
+   # def on_finish(self):
+    #    wrapper.main(Ip_collection)
 
 
 class PortHandler(tornado.web.RequestHandler):
@@ -47,12 +44,13 @@ class PortHandler(tornado.web.RequestHandler):
 
     def get(self):
         global source_port
-        self.write(str(source_port))
-        wrapper.stop()
-        wrapper.add_port(source_port)
-        source_port += 1
+        
         if self.request.remote_ip not in Ip_collection:
-            Ip_collection.append(self.request.remote_ip)
+        	wrapper.stop()
+       		wrapper.add_port(source_port)
+		source_port += 1
+		self.write(str(source_port))
+            	Ip_collection.append(self.request.remote_ip)
 
     def on_finish(self):
         wrapper.main(Ip_collection)
@@ -60,7 +58,7 @@ class PortHandler(tornado.web.RequestHandler):
 
 def make_app():
     return tornado.web.Application([
-        (r"/", MainHandler),
+        #(r"/", MainHandler),
         (r"/get_port/?", PortHandler)
     ])
 
