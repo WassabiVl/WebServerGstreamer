@@ -12,6 +12,7 @@ DNS = '8.8.8.8'
 port_list = []
 stop = False
 
+
 class GStreamerWrapper:
     def __init__(self):
         Gst.init(None)
@@ -23,14 +24,14 @@ class GStreamerWrapper:
         if self.pipeline_string != "":
             self.pipeline_string += " "
 
-        self.pipeline_string += "udpsrc port=" + str(port) + \
-                                " caps=\"application/x-rtp, width=640, height=480, framerate=60/1\" buffer-size=100000 ! rtpjitterbuffer ! rtpgstdepay ! jpegdec ! alpha method=green ! mixer.sink_" + \
-                                str(port)
+        self.pipeline_string += "udpsrc port=" + str(
+            port) + 'caps=\"application/x-rtp, width=640, height=480, framerate=60/1\" buffer-size=100000 ! rtpjitterbuffer ! rtpgstdepay ! jpegdec ! alpha method=green ! mixer.sink_' + str(
+            port)
 
     def add_dest(self, sink_ip):
         # for testing
-       # self.pipeline_string += "autovideosink"
-        #sink_ip = [];
+        # self.pipeline_string += "autovideosink"
+        # sink_ip = [];
         self.pipeline_string += "jpegenc ! rtpgstpay config-interval=1 ! multiudpsink clients="
         client_list = ""
 
@@ -47,7 +48,8 @@ class GStreamerWrapper:
         bus = self.pipeline.get_bus()
 
         while stop == False:
-            message = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE, Gst.MessageType.STATE_CHANGED | Gst.MessageType.ERROR | Gst.MessageType.EOS)
+            message = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE,
+                                             Gst.MessageType.STATE_CHANGED | Gst.MessageType.ERROR | Gst.MessageType.EOS)
 
             if message.type == Gst.MessageType.ERROR:
                 err, debug = message.parse_error()
@@ -62,7 +64,7 @@ class GStreamerWrapper:
                     old_state, new_state, pending_state = message.parse_state_changed()
                     print("Pipeline state changed from %s to %s." % (old_state.value_nick, new_state.value_nick))
 
-                    if (new_state.value_nick == 'playing'):
+                    if new_state.value_nick == 'playing':
                         break
             else:
                 print("Unexpected message received.", file=sys.stderr)
@@ -75,7 +77,7 @@ class GStreamerWrapper:
             for key, i in enumerate(port_list):
                 print(key, i)
                 #  video elements
-                self.add_source(i);
+                self.add_source(i)
 
             self.pipeline_string += " videomixer name=mixer ! videoconvert ! "
             self.add_dest(sink_ip)
@@ -102,7 +104,7 @@ class GStreamerWrapper:
 
     def stop(self):
         global stop
-        stop = True;
+        stop = True
 
         if self.pipeline:
             self.pipeline.set_state(Gst.State.NULL)
@@ -113,4 +115,4 @@ class GStreamerWrapper:
         self.pipeline = None
 
     def add_port(self, port):
-        port_list.append(port);
+        port_list.append(port)
