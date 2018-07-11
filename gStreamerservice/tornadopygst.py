@@ -44,13 +44,13 @@ class PortHandler(tornado.web.RequestHandler):
 
     def get(self):
         global source_port
-        
-        if self.request.remote_ip not in Ip_collection:
-        	wrapper.stop()
-       		wrapper.add_port(source_port)
-		source_port += 1
-		self.write(str(source_port))
-            	Ip_collection.append(self.request.remote_ip)
+        self.write(str(source_port))
+        wrapper.stop()
+        wrapper.add_port(source_port)
+        source_port += 1
+        Ip_collection.append(self.request.remote_ip)
+
+    #    if self.request.remote_ip not in Ip_collection:
 
     def on_finish(self):
         wrapper.main(Ip_collection)

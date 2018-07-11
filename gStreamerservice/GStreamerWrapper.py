@@ -23,16 +23,16 @@ class GStreamerWrapper:
     def add_source(self, port):
         if self.pipeline_string != "":
             self.pipeline_string += " "
-
+            
         self.pipeline_string += "udpsrc port=" + str(
-            port) + 'caps=\"application/x-rtp, width=640, height=480, framerate=60/1\" buffer-size=100000 ! rtpjitterbuffer ! rtpgstdepay ! jpegdec ! alpha method=green ! mixer.sink_' + str(
+            port) + ' caps=\"application/x-rtp, width=640, height=480, framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! avdec_h264 ! alpha method=green ! mixer.sink_' + str(
             port)
 
     def add_dest(self, sink_ip):
         # for testing
         # self.pipeline_string += "autovideosink"
         # sink_ip = [];
-        self.pipeline_string += "jpegenc ! rtpgstpay config-interval=1 ! multiudpsink clients="
+        self.pipeline_string += "x264enc bitrate=500 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay ! multiudpsink clients="
         client_list = ""
 
         for key, i in enumerate(sink_ip):
@@ -79,9 +79,9 @@ class GStreamerWrapper:
                 #  video elements
                 self.add_source(i)
 
-            self.pipeline_string += " videomixer name=mixer ! videoconvert ! "
+            self.pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! "
             self.add_dest(sink_ip)
-            print(self.pipeline_string)
+            print(self.pipeline_string + "\n")
             self.pipeline = Gst.parse_launch(self.pipeline_string)
             ret = self.pipeline.set_state(Gst.State.PLAYING)
 
