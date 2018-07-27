@@ -14,7 +14,6 @@ define("port", default=8888, help="run on the given port", type=int)
 source_port = 5000
 wrapper = GStreamerWrapper.GStreamerWrapper()
 
-
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, ObjectId):
@@ -46,14 +45,13 @@ class PortHandler(tornado.web.RequestHandler):
         global source_port
         self.write(str(source_port))
         wrapper.stop()
-        wrapper.add_port(source_port)
+        wrapper.add_client(self.request.remote_ip, source_port)
         source_port += 1
-        Ip_collection.append(self.request.remote_ip)
 
     #    if self.request.remote_ip not in Ip_collection:
 
     def on_finish(self):
-        wrapper.main(Ip_collection)
+        wrapper.start_pipelines()
 
 
 def make_app():
