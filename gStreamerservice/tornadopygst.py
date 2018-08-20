@@ -3,6 +3,7 @@ import json
 import tornado
 from tornado import ioloop, web, websocket, options, httpserver
 from tornado.options import define, options
+import socket
 from tornado.platform import asyncio
 from tornado.httpclient import AsyncHTTPClient
 
@@ -14,6 +15,7 @@ define("port", default=8888, help="run on the given port", type=int)
 source_port = 5000
 wrapper = GStreamerWrapper.GStreamerWrapper()
 
+
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, ObjectId):
@@ -21,20 +23,31 @@ class JSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-#class MainHandler(tornado.web.RequestHandler):
- #   def get(self):
-  #      wrapper.stop()
-   #     self.write('<html><body>welcome to gstreamer, your Ip is' + self.request.remote_ip +' </body></html>')
-    #    if self.request.remote_ip not in Ip_collection:
-         #   Ip_collection.append(self.request.remote_ip)
+class MainHandler(tornado.web.RequestHandler):
+    def data_received(self, chunk):
+        pass
 
-        #     gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
-        #     pipeline = gstreamerSendReceive.main()
-        #     gst_thread = threading.Thread(target=pipeline)
-        #     gst_thread.start()
+    def get(self, error=None):
+        wrapper.stop()
+        self.render("template.html", title="My title", items=Ip_collection, error=error)
+        if self.request.remote_ip not in Ip_collection:
+            Ip_collection.append(self.request.remote_ip)
 
-   # def on_finish(self):
-    #    wrapper.main(Ip_collection)
+        # gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
+        # pipeline = gstreamerSendReceive.main()
+        # gst_thread = threading.Thread(target=pipeline)
+        # gst_thread.start()
+
+    # def on_finish(self):
+    # wrapper.main(Ip_collection)
+
+    def post(self):
+        try:
+            socket.inet_aton(self.get_body_argument("message"))
+        except socket.error:
+            self.get('not an IP')
+        Ip_collection.append(self.get_body_argument("message"))
+        self.get()
 
 
 class PortHandler(tornado.web.RequestHandler):
@@ -54,10 +67,32 @@ class PortHandler(tornado.web.RequestHandler):
         wrapper.start_pipelines()
 
 
+class deleteIP(tornado.web.RequestHandler):
+    def data_received(self, chunk):
+        pass
+
+    def get(self, *args):
+        self.write(*args)
+        Ip_collection.remove(*args)
+        self.redirect('/')
+
+    def on_finish(self):
+        # wrapper.start_pipelines()
+        return MainHandler
+        # self.write(self.request.uri)
+
+
+
+    #    if self.request.remote_ip not in Ip_collection:
+
+
+
+
 def make_app():
     return tornado.web.Application([
-        #(r"/", MainHandler),
-        (r"/get_port/?", PortHandler)
+        (r"/", MainHandler),
+        (r"/(.*)", deleteIP),
+        # (r"/get_port/?", PortHandler)
     ])
 
 
