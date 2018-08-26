@@ -62,7 +62,7 @@ class GStreamerWrapper:
     def add_client(self, ip, port):
         try:
             global clients
-            clients[ip] = port;
+            clients[ip] = port
         except Exception as e:
             print(e)
 
@@ -82,7 +82,7 @@ class GStreamerWrapper:
 
             Gst.init(None)
             self.GObject = None
-            self.pipeline_list.clear();
+            self.pipeline_list.clear()
         except Exception as e:
             print(e)
 
@@ -97,7 +97,7 @@ class GStreamerWrapper:
 
                 for ip_dest, port_dest in clients.items():
                     print(ip_dest, port_dest)
-                    pipeline_string = "";
+                    pipeline_string = ""
 
                     for ip_source, port_source in clients.items():
                         if (ip_dest != ip_source):
@@ -112,34 +112,9 @@ class GStreamerWrapper:
 
                     if ret == Gst.StateChangeReturn.FAILURE:
                         print("Unable to set the pipeline to playing state.", file=sys.stderr)
-                        self.stop();
+                        self.stop()
                         exit(-1)
 
                 self.check_bus()
         except Exception as e:
             print(e)
-
-    def start_pipelines(self):
-        Gst.init(None)
-        self.GObject = GObject.threads_init()
-
-        for ip_dest, port_dest in clients.items():
-            print(ip_dest, port_dest)
-            pipeline_string = ""
-
-            for ip_source, port_source in clients.items():
-                if (ip_dest != ip_source):
-                    self.add_source(ip_source, pipeline_string)
-
-            pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " + \
-                               "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
-            print(pipeline_string + "\n")
-            pipeline = Gst.parse_launch(pipeline_string)
-            ret = pipeline.set_state(Gst.State.PLAYING)
-
-            if ret == Gst.StateChangeReturn.FAILURE:
-                print("Unable to set the pipeline to playing state.", file=sys.stderr)
-                self.stop()
-                exit(-1)
-
-        self.check_bus()
