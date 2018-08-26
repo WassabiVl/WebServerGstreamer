@@ -107,7 +107,7 @@ class GStreamerWrapper:
             global clients_temp
             clients_temp = clients.copy()
 
-            if len(clients.items()) > 0:
+            if len(clients.items()) > 1:
                 Gst.init(None)
                 self.GObject = GObject.threads_init()
 
@@ -116,8 +116,8 @@ class GStreamerWrapper:
                     pipeline_string = ""
 
                     for ip_source, port_source in clients_temp.items():
-                        #if (ip_dest != ip_source):
-                        pipeline_string = self.add_source(ip_source, port_source, pipeline_string)
+                        if (ip_dest != ip_source):
+                         pipeline_string = self.add_source(ip_source, port_source, pipeline_string)
 
                     pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
                                        "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
