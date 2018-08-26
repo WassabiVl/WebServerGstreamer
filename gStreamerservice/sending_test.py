@@ -22,9 +22,9 @@ pipeline = Gst.Pipeline.new("test-pipeline")
 
 # Build the pipeline
 try:
-    pipeline = Gst.parse_launch('autovideosrc ! videorate ! video/x-raw,framerate=15/1 ! jpegenc quality=50 ! rtpgstpay config-interval=1 ! udpsink port=5000')
-except Exception:
-    print("Error: %s\n", )
+    pipeline = Gst.parse_launch('videotestsrc pattern=pinwheel background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink port=5002')
+except Exception as e:
+    print(e)
 
 # video = Gst.ElementFactory.make('videotestsrc','videotestsrc')
 # video.set_property('is-live', True)

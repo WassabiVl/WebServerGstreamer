@@ -24,7 +24,7 @@ class GStreamerWrapper:
             pipeline_string += " "
 
         pipeline_string += "udpsrc port=" + str(
-        port) + ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! mixer.sink_' + str(
+        port) + ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! mixer.sink_' + str(
         port)
 
         return pipeline_string
@@ -58,40 +58,55 @@ class GStreamerWrapper:
                     print("Unexpected message received.", file=sys.stderr)
 
     def add_client(self, ip, port):
-        clients[ip] = port;
+        try:
+            global clients
+            clients[ip] = port;
+        except Exception as e:
+            print(e)
 
     def stop(self):
-        global stop
-        stop = True
+        try:
+            global stop
+            stop = True
 
-        for pipeline in self.pipeline_list:
-            pipeline.set_state(Gst.State.NULL)
+            for pipeline in self.pipeline_list:
+                pipeline.set_state(Gst.State.NULL)
 
-        Gst.init(None)
-        self.GObject = None
-        self.pipeline_list.clear();
+            Gst.init(None)
+            self.GObject = None
+            self.pipeline_list.clear();
+        except Exception as e:
+            print(e)
 
     def start_pipelines(self):
-        Gst.init(None)
-        self.GObject = GObject.threads_init()
+        try:
+            # only start if there are more than 1 clients
+            global clients
 
-        for ip_dest, port_dest in clients.items:
-            print(ip_dest, port_dest)
-            pipeline_string = "";
+            if len(clients.items()) > 1:
+                Gst.init(None)
+                self.GObject = GObject.threads_init()
 
-            for ip_source, port_source in clients.items:
-                if (ip_dest != ip_source):
-                    self.add_source(ip_source, pipeline_string)
+                for ip_dest, port_dest in clients.items():
+                    print(ip_dest, port_dest)
+                    pipeline_string = "";
 
-            pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
-                               "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
-            print(pipeline_string + "\n")
-            pipeline = Gst.parse_launch(self.pipeline_string)
-            ret = pipeline.set_state(Gst.State.PLAYING)
+                    for ip_source, port_source in clients.items():
+                        if (ip_dest != ip_source):
+                            pipeline_string = self.add_source(port_source, pipeline_string)
 
-            if ret == Gst.StateChangeReturn.FAILURE:
-                print("Unable to set the pipeline to playing state.", file=sys.stderr)
-                self.stop();
-                exit(-1)
+                    pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
+                                       "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
+                    print(pipeline_string + "\n")
+                    pipeline = Gst.parse_launch(pipeline_string)
+                    self.pipeline_list.append(pipeline)
+                    ret = pipeline.set_state(Gst.State.PLAYING)
 
-        self.check_bus()
+                    if ret == Gst.StateChangeReturn.FAILURE:
+                        print("Unable to set the pipeline to playing state.", file=sys.stderr)
+                        self.stop();
+                        exit(-1)
+
+                self.check_bus()
+        except Exception as e:
+            print(e)
