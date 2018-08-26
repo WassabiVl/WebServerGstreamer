@@ -21,7 +21,7 @@ class GStreamerWrapper:
         self.GObject = None
         self.pipeline_list = []
 
-    def add_source(self, ip_source, port_source, pipeline_string):
+    def add_source(self, ip_source, port_source, port_dest, pipeline_string):
         global temp_port
         global clients_temp
 
@@ -33,7 +33,7 @@ class GStreamerWrapper:
         pipeline_string += "udpsrc port=" + str(port_source) + \
                            ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! tee name=' + \
                            tee + ' ' + tee + '. ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="127.0.0.1" port=' + str(temp_port) + \
-                           ' ' + tee + '. ! queue ! alpha method=green ! videoconvert !  mixer.sink_' + \
+                           ' ' + tee + '. ! queue ! alpha method=green ! videoconvert !  mixer' + str(port_dest) + '.sink_' + \
                            str(port_source)
 
         clients_temp[ip_source] = temp_port
@@ -117,9 +117,9 @@ class GStreamerWrapper:
 
                     for ip_source, port_source in clients_temp.items():
                         if (ip_dest != ip_source):
-                         pipeline_string = self.add_source(ip_source, port_source, pipeline_string)
+                         pipeline_string = self.add_source(ip_source, port_source, port_dest, pipeline_string)
 
-                    pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
+                    pipeline_string += " videomixer name=mixer" + str(port_dest) + " background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
                                        "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
                     print(pipeline_string + "\n")
                     pipeline = Gst.parse_launch(pipeline_string)
