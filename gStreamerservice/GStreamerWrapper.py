@@ -12,7 +12,8 @@ DNS = '8.8.8.8'
 port_list = []
 stop = False
 clients = {}
-
+clients_temp = {}
+temp_port = 7000
 
 class GStreamerWrapper:
     def __init__(self):
@@ -20,14 +21,23 @@ class GStreamerWrapper:
         self.GObject = None
         self.pipeline_list = []
 
-    def add_source(self, port, pipeline_string, port_dest):
+    def add_source(self, ip_source, port_source, pipeline_string):
+        global temp_port
+        global clients_temp
+
         if pipeline_string != "":
             pipeline_string += " "
 
-        pipeline_string += "udpsrc port=" + str(
-            port) + ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! mixer' + port_dest + '.sink_' + str(
-            port)
+        tee = "t" + str(port_source);
 
+        pipeline_string += "udpsrc port=" + str(port_source) + \
+                           ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! tee name=' + \
+                           tee + ' ' + tee + '. ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="127.0.0.1" port=' + str(temp_port) + \
+                           ' ' + tee + '. ! queue ! alpha method=green ! videoconvert !  mixer.sink_' + \
+                           str(port_source)
+
+        clients_temp[ip_source] = temp_port
+        temp_port -= 1
         return pipeline_string
 
     def check_bus(self):
@@ -75,35 +85,41 @@ class GStreamerWrapper:
     def stop(self):
         try:
             global stop
+            global temp_port
+            global clients
+            global clients_temp
             stop = True
 
             for pipeline in self.pipeline_list:
                 pipeline.set_state(Gst.State.NULL)
 
-            Gst.init(None)
             self.GObject = None
             self.pipeline_list.clear()
+            temp_port = 7000
+            clients_temp = clients.copy()
         except Exception as e:
             print(e)
 
-    def start_pipelines(self):
+    def run_pipelines(self):
         try:
             # only start if there are more than 1 clients
             global clients
+            global clients_temp
+            clients_temp = clients.copy()
 
-            if len(clients.items()) > 1:
+            if len(clients.items()) > 0:
                 Gst.init(None)
                 self.GObject = GObject.threads_init()
 
-                for ip_dest, port_dest in clients.items():
+                for ip_dest, port_dest in clients_temp.items():
                     print(ip_dest, port_dest)
                     pipeline_string = ""
 
-                    for ip_source, port_source in clients.items():
-                        if (ip_dest != ip_source):
-                            pipeline_string = self.add_source(port_source, pipeline_string, str(port_dest))
+                    for ip_source, port_source in clients_temp.items():
+                        #if (ip_dest != ip_source):
+                        pipeline_string = self.add_source(ip_source, port_source, pipeline_string)
 
-                    pipeline_string += " videomixer name=mixer" + str(port_dest) + " background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
+                    pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
                                        "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
                     print(pipeline_string + "\n")
                     pipeline = Gst.parse_launch(pipeline_string)

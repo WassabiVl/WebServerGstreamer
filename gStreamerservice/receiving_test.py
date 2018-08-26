@@ -22,7 +22,7 @@ pipeline = Gst.Pipeline.new("test-pipeline")
 
 # Build the pipeline
 try:
-   pipeline = Gst.parse_launch('udpsrc port=6000 caps="application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=30/1" ! rtpjitterbuffer drop-on-latency=false latency=100 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! autovideosink')
+   pipeline = Gst.parse_launch('udpsrc port=7000 caps="application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=30/1" ! rtpjitterbuffer drop-on-latency=false latency=100 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! autovideosink')
    # pipeline = Gst.parse_launch('videotestsrc pattern=pinwheel ! videoconvert ! autovideosink')
 except Exception as e:
     print(e)

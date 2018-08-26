@@ -57,7 +57,7 @@ class PortHandler(tornado.web.RequestHandler):
         source_port += 1
 
     def on_finish(self):
-        wrapper.start_pipelines()
+        wrapper.run_pipelines()
 
 
 class deleteIP(tornado.web.RequestHandler):
