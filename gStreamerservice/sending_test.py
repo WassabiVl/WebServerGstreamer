@@ -22,7 +22,8 @@ pipeline = Gst.Pipeline.new("test-pipeline")
 
 # Build the pipeline
 try:
-    pipeline = Gst.parse_launch('videotestsrc pattern=pinwheel background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink port=5002')
+    pipeline = Gst.parse_launch('videotestsrc pattern=pinwheel background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=200 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink port=5002')
+   # pipeline = Gst.parse_launch('videotestsrc pattern=pinwheel background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=141.54.50.64 port=5001');
 except Exception as e:
     print(e)
 

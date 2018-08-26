@@ -20,12 +20,12 @@ class GStreamerWrapper:
         self.GObject = None
         self.pipeline_list = []
 
-    def add_source(self, port, pipeline_string):
+    def add_source(self, port, pipeline_string, port_dest):
         if pipeline_string != "":
             pipeline_string += " "
 
         pipeline_string += "udpsrc port=" + str(
-            port) + ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! mixer.sink_' + str(
+            port) + ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! mixer' + port_dest + '.sink_' + str(
             port)
 
         return pipeline_string
@@ -101,9 +101,9 @@ class GStreamerWrapper:
 
                     for ip_source, port_source in clients.items():
                         if (ip_dest != ip_source):
-                            pipeline_string = self.add_source(port_source, pipeline_string)
+                            pipeline_string = self.add_source(port_source, pipeline_string, str(port_dest))
 
-                    pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
+                    pipeline_string += " videomixer name=mixer" + str(port_dest) + " background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
                                        "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
                     print(pipeline_string + "\n")
                     pipeline = Gst.parse_launch(pipeline_string)
