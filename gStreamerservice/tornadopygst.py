@@ -11,8 +11,9 @@ from gStreamerservice import GStreamerWrapper
 
 clients = dict()
 Ip_collection = []
+port_list = []
 define("port", default=8888, help="run on the given port", type=int)
-source_port = 5000
+source_port = 4999
 wrapper = GStreamerWrapper.GStreamerWrapper()
 
 
@@ -28,25 +29,19 @@ class MainHandler(tornado.web.RequestHandler):
         pass
 
     def get(self, error=None):
-        wrapper.stop()
-        self.render("template.html", title="My title", items=Ip_collection, error=error)
-        if self.request.remote_ip not in Ip_collection:
-            Ip_collection.append(self.request.remote_ip)
-
-        # gstreamerSendReceive = GstremerSendRecive.GstSendReceive(Ip_collection)
-        # pipeline = gstreamerSendReceive.main()
-        # gst_thread = threading.Thread(target=pipeline)
-        # gst_thread.start()
-
-    # def on_finish(self):
-    # wrapper.main(Ip_collection)
+        wrapper.get_client()
+        self.render("template.html", title="My title", items=(wrapper.get_client()), port=port_list, error=error)
 
     def post(self):
+        global source_port
         try:
             socket.inet_aton(self.get_body_argument("message"))
         except socket.error:
             self.get('not an IP')
-        Ip_collection.append(self.get_body_argument("message"))
+        wrapper.stop()
+        wrapper.add_client(self.get_body_argument("message"), source_port)
+        source_port += 1
+        wrapper.start_pipelines()
         self.get()
 
 
@@ -61,8 +56,6 @@ class PortHandler(tornado.web.RequestHandler):
         wrapper.add_client(self.request.remote_ip, source_port)
         source_port += 1
 
-    #    if self.request.remote_ip not in Ip_collection:
-
     def on_finish(self):
         wrapper.start_pipelines()
 
@@ -73,7 +66,7 @@ class deleteIP(tornado.web.RequestHandler):
 
     def get(self, *args):
         self.write(*args)
-        Ip_collection.remove(*args)
+        wrapper.del_client(*args)
         self.redirect('/')
 
     def on_finish(self):
@@ -81,19 +74,15 @@ class deleteIP(tornado.web.RequestHandler):
         return MainHandler
         # self.write(self.request.uri)
 
-
-
     #    if self.request.remote_ip not in Ip_collection:
-
-
 
 
 def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
-        (r"/(.*)", deleteIP),
-        # (r"/get_port/?", PortHandler)
-    ])
+        (r"/del/(.*)", deleteIP),
+        (r"/get_port/?", PortHandler)
+    ], debug=True)
 
 
 if __name__ == "__main__":

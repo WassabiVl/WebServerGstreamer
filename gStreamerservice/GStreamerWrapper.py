@@ -13,6 +13,7 @@ port_list = []
 stop = False
 clients = {}
 
+
 class GStreamerWrapper:
     def __init__(self):
         Gst.init(None)
@@ -24,8 +25,8 @@ class GStreamerWrapper:
             pipeline_string += " "
 
         pipeline_string += "udpsrc port=" + str(
-        port) + ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! mixer.sink_' + str(
-        port)
+            port) + ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! alpha method=green ! videoconvert ! mixer.sink_' + str(
+            port)
 
         return pipeline_string
 
@@ -36,7 +37,8 @@ class GStreamerWrapper:
             for pipeline in self.pipeline_list:
                 pipeline.set_state(Gst.State.NULL)
                 bus = pipeline.get_bus()
-                message = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE, Gst.MessageType.STATE_CHANGED | Gst.MessageType.ERROR | Gst.MessageType.EOS)
+                message = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE,
+                                                 Gst.MessageType.STATE_CHANGED | Gst.MessageType.ERROR | Gst.MessageType.EOS)
 
                 if message.type == Gst.MessageType.ERROR:
                     err, debug = message.parse_error()
@@ -58,7 +60,13 @@ class GStreamerWrapper:
                     print("Unexpected message received.", file=sys.stderr)
 
     def add_client(self, ip, port):
-        clients[ip] = port;
+        clients[ip] = port
+
+    def get_client(self):
+        return clients.items()
+
+    def del_client(self,ip):
+        del clients[ip]
 
     def stop(self):
         global stop
@@ -69,29 +77,29 @@ class GStreamerWrapper:
 
         Gst.init(None)
         self.GObject = None
-        self.pipeline_list.clear();
+        self.pipeline_list.clear()
 
     def start_pipelines(self):
         Gst.init(None)
         self.GObject = GObject.threads_init()
 
-        for ip_dest, port_dest in clients.items:
+        for ip_dest, port_dest in clients.items():
             print(ip_dest, port_dest)
-            pipeline_string = "";
+            pipeline_string = ""
 
-            for ip_source, port_source in clients.items:
+            for ip_source, port_source in clients.items():
                 if (ip_dest != ip_source):
                     self.add_source(ip_source, pipeline_string)
 
-            pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " +\
+            pipeline_string += " videomixer name=mixer background=white ! queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency " + \
                                "! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=" + ip_dest + " port=6000"
             print(pipeline_string + "\n")
-            pipeline = Gst.parse_launch(self.pipeline_string)
+            pipeline = Gst.parse_launch(pipeline_string)
             ret = pipeline.set_state(Gst.State.PLAYING)
 
             if ret == Gst.StateChangeReturn.FAILURE:
                 print("Unable to set the pipeline to playing state.", file=sys.stderr)
-                self.stop();
+                self.stop()
                 exit(-1)
 
         self.check_bus()

@@ -18,8 +18,8 @@
 {% end %}
 <p>Connected Clients</p>
 <ul>
-    {% for item in items %}
-    <li>{{ escape(item) }}</li><a href="/{{ item }}">remove</a>
+    {% for key,item in items %}
+    <li>IP: {{ key }} Port: {{ item }}</li><a href="/del/{{ key }}">remove</a>
     {% end %}
 </ul>
 <hr>
