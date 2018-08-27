@@ -15,7 +15,7 @@ clients = {}
 
 # contains ports for redirected packets
 clients_temp = {}
-temp_port = 7000
+redirected_port = 7000
 
 class GStreamerWrapper:
     def __init__(self):
@@ -24,7 +24,7 @@ class GStreamerWrapper:
         self.pipeline_list = []
 
     def add_source(self, ip_source, port_source, port_dest, pipeline_string):
-        global temp_port
+        global redirected_port
         global clients_temp
 
         if pipeline_string != "":
@@ -35,12 +35,12 @@ class GStreamerWrapper:
 
         pipeline_string += "udpsrc port=" + str(port_source) + \
                            ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! tee name=' + \
-                           tee + ' ' + tee + '. ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="127.0.0.1" port=' + str(temp_port) + \
+                           tee + ' ' + tee + '. ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="127.0.0.1" port=' + str(redirected_port) + \
                            ' ' + tee + '. ! queue ! alpha method=green ! videoconvert !  mixer' + str(port_dest) + '.sink_' + \
                            str(port_source)
 
-        clients_temp[ip_source] = temp_port
-        temp_port -= 1
+        clients_temp[ip_source] = redirected_port
+        redirected_port -= 1
         return pipeline_string
 
     def check_bus(self):
@@ -88,7 +88,7 @@ class GStreamerWrapper:
     def stop(self):
         try:
             global stop
-            global temp_port
+            global redirected_port
             global clients
             global clients_temp
             stop = True
@@ -98,7 +98,7 @@ class GStreamerWrapper:
 
             self.GObject = None
             self.pipeline_list.clear()
-            temp_port = 7000
+            redirected_port = 7000
             clients_temp = clients.copy()
         except Exception as e:
             print(e)
