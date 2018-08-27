@@ -1,34 +1,8 @@
-https://github.com/rubenrua/GstreamerCodeSnippets
+// gstreamer videotestsrc send on upd-sink
+gst-launch-1.0 -v videotestsrc pattern=ball background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=141.54.51.136 port=5000
 
-http://brettviren.github.io/pygst-tutorial-org/pygst-tutorial.pdf
-
-https://docs.djangoproject.com/en/2.0/intro/tutorial01/
-
-http://www.turbogears.org/
-
-https://markwingerd.wordpress.com/2014/11/20/using-gstreamer-with-python-part-2/
-
-##the sender
-./surface-streams/realsense -gstpipe "! jpegenc quality=50 ! rtpgstpay config-interval=1 ! udpsink host=141.54.59.244 port=5000"
-
-./surface-streams/realsense -gstpipe "videorate ! video/x-raw, framerate=60/1  ! jpegenc quality=50 ! rtpgstpay config-interval=1  ! udpsink host=141.54.57.51 port=8880 sync=false"
-## the reciver
-gst-launch-1.0 -v udpsrc port=6000  caps="application/x-rtp, framerate=30/1, width=500, height=300" buffer-size=100000 ! rtpjitterbuffer! rtpgstdepay ! jpegdec ! videoconvert ! xvimagesink sync=false
-
-gst-launch-1.0 -v udpsrc port=6000  caps="application/x-rtp, framerate=30/1, width=500, height=300" ! rtpjitterbuffer ! rtpgstdepay ! jpegdec ! videoconvert ! xvimagesink sync=false
-
-
-./surface-streams/realsense -gstpipe  "videorate ! video/x-raw,framerate=60/1, width=500, height=300 ! jpegenc quality=75 ! videoconvert ! autovideosink"
-
-gst-launch-1.0 -v videotestsrc pattern=ball background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=141.54.51.136 port=5001
-gst-launch-1.0 -v videotestsrc pattern=bar background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=141.54.51.136 port=5001
-
-./surface-streams/realsense -gstpipe "videorate ! video/x-raw, framerate=30/1 ! jpegenc quality=50 ! rtpgstpay config-interval=1  ! udpsink host=141.54.51.136 port=5000"
-
-./surface-streams/realsense -gstpipe "queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=141.54.51.136 port=5000"
-
-./surface-streams/realsense -gstpipe "queue ! videoconvert ! avenc_mpeg4 ! rtpmp4vpay ! udpsink host=141.54.51.136 port=5000"
-
+// gstreamer udp recieve
 gst-launch-1.0 -v udpsrc port=6000 caps="application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! videoconvert ! queue ! xvimagesink sync=false
 
-gst-launch-1.0 -v udpsrc port=6000 caps="application/x-rtp, payload=96,clock-rate=90000, framerate=60/1, width=500, height=300" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtpmp4vdepay ! avdec_mpeg4 ! queue ! videoconvert ! queue ! xvimagesink 
+//surface-streams gstreamer send on udp
+./surface-streams/realsense -gstpipe "queue ! videoconvert ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host=141.54.51.136 port=5001"
