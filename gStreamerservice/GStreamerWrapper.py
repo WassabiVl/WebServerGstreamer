@@ -34,7 +34,7 @@ class GStreamerWrapper:
         tee = "t" + str(port_source);
 
         pipeline_string += "udpsrc port=" + str(port_source) + \
-                           ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,width=640,height=480,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! tee name=' + \
+                           ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! tee name=' + \
                            tee + ' ' + tee + '. ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="127.0.0.1" port=' + str(temp_port) + \
                            ' ' + tee + '. ! queue ! alpha method=green ! videoconvert !  mixer' + str(port_dest) + '.sink_' + \
                            str(port_source)
@@ -109,6 +109,7 @@ class GStreamerWrapper:
             global clients
             global clients_temp
             clients_temp = clients.copy()
+
 
             # only run when more than 1 clients are connected
             if len(clients.items()) > 1:
