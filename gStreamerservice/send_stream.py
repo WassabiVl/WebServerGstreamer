@@ -15,6 +15,7 @@ def run_pipeline(script):
     pipeline.set_state(Gst.State.PAUSED)
     print('playing')
     pipeline.set_state(Gst.State.PLAYING)
+    return pipeline
 
 # Build the pipeline
 try:
@@ -27,7 +28,26 @@ try:
     run_pipeline('videotestsrc pattern=' + sys.argv[2] +
                     ' background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=200 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="' +
                     sys.argv[1] + '" port=' + r.text)
-    run_pipeline('udpsrc port=6000 caps="application/x-rtp, payload=96,clock-rate=90000, framerate=60/1" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtpmp4vdepay ! avdec_mpeg4 ! queue ! videoconvert ! queue ! xvimagesink sync=false')
+    pipeline = run_pipeline('udpsrc port=6000 caps="application/x-rtp, payload=96,clock-rate=90000, framerate=60/1" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtpmp4vdepay ! avdec_mpeg4 ! queue ! videoconvert ! queue ! autovideosink sync=false')
+
+    # Wait until error or EOS
+    bus = pipeline.get_bus()
+
+    msg = bus.timed_pop_filtered(
+        Gst.CLOCK_TIME_NONE, Gst.MessageType.ERROR | Gst.MessageType.EOS)
+    if msg:
+        if msg.type == Gst.MessageType.ERROR:
+            err, debug = msg.parse_error()
+            print("Error received from element %s: %s" % (
+                msg.src.get_name(), err), file=sys.stderr)
+            print("Debugging information: %s" % debug, file=sys.stderr)
+        elif msg.type == Gst.MessageType.EOS:
+            print("End-Of-Stream reached.")
+        else:
+            print("Unexpected message received.", file=sys.stderr)
+
+    # Free resources
+    pipeline.set_state(Gst.State.NULL)
 
 except Exception as e:
     print(e)
