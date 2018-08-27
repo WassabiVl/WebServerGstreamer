@@ -41,8 +41,11 @@ class MainHandler(tornado.web.RequestHandler):
         wrapper.stop()
         wrapper.add_client(self.get_body_argument("message"), source_port)
         source_port += 1
-        wrapper.start_pipelines()
+        # wrapper.start_pipelines()
         self.get()
+
+    def on_finish(self):
+        wrapper.start_pipelines()
 
 
 class PortHandler(tornado.web.RequestHandler):
@@ -82,7 +85,7 @@ def make_app():
         (r"/", MainHandler),
         (r"/del/(.*)", deleteIP),
         (r"/get_port/?", PortHandler)
-    ], debug=True)
+    ], debug=False)
 
 
 if __name__ == "__main__":
