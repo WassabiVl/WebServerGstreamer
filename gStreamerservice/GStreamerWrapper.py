@@ -34,7 +34,7 @@ class GStreamerWrapper:
         tee = "t" + str(port_source);
 
         pipeline_string += "udpsrc port=" + str(port_source) + \
-                           ' caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264,framerate=60/1\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! tee name=' + \
+                           ' caps=\"application/x-rtp, media=video, clock-rate=90000, encoding-name=H264, framerate=60/1, width=1600,height=900\" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtph264depay ! queue ! h264parse ! queue ! avdec_h264 ! queue ! tee name=' + \
                            tee + ' ' + tee + '. ! x264enc bitrate=1000 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="127.0.0.1" port=' + str(redirected_port) + \
                            ' ' + tee + '. ! queue ! alpha method=green ! videoconvert !  mixer' + str(port_dest) + '.sink_' + \
                            str(port_source)
