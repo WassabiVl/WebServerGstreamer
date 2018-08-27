@@ -30,5 +30,7 @@ try:
                     sys.argv[1] + '" port=' + r.text)
     run_pipeline('udpsrc port=6000 caps="application/x-rtp, payload=96,clock-rate=90000, framerate=60/1" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtpmp4vdepay ! avdec_mpeg4 ! queue ! videoconvert ! queue ! autovideosink sync=false')
 
+    Gtk.main()
+
 except Exception as e:
     print(e)
