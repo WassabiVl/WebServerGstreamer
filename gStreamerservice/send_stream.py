@@ -9,6 +9,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gst, Gtk
 
 def run_pipeline(script):
+    print(script)
     pipeline = Gst.parse_launch(script)
 
     # Start playing
