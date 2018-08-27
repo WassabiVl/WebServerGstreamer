@@ -12,6 +12,8 @@ DNS = '8.8.8.8'
 port_list = []
 stop = False
 clients = {}
+
+# contains ports for redirected packets
 clients_temp = {}
 temp_port = 7000
 
@@ -28,6 +30,7 @@ class GStreamerWrapper:
         if pipeline_string != "":
             pipeline_string += " "
 
+        # tee is used to branch the decoded packet: to the mixer and redirect to another port with udpsink
         tee = "t" + str(port_source);
 
         pipeline_string += "udpsrc port=" + str(port_source) + \
@@ -107,6 +110,7 @@ class GStreamerWrapper:
             global clients_temp
             clients_temp = clients.copy()
 
+            # only run when more than 1 clients are connected
             if len(clients.items()) > 1:
                 Gst.init(None)
                 self.GObject = GObject.threads_init()
@@ -116,6 +120,7 @@ class GStreamerWrapper:
                     pipeline_string = ""
 
                     for ip_source, port_source in clients_temp.items():
+                        # cross mixing
                         if (ip_dest != ip_source):
                          pipeline_string = self.add_source(ip_source, port_source, port_dest, pipeline_string)
 
