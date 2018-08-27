@@ -45,7 +45,7 @@ try:
     run_pipeline('videotestsrc pattern=' + sys.argv[2] +
                     ' background-color=0x00ff00 foreground-color=0x0000ff ! x264enc bitrate=200 speed-preset=superfast tune=zerolatency ! queue ! rtph264pay config-interval=1 ! queue ! udpsink host="' +
                     sys.argv[1] + '" port=' + r.text)
-    run_pipeline('udpsrc port=6000 caps="application/x-rtp, payload=96,clock-rate=90000, framerate=60/1, width=500, height=300" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtpmp4vdepay ! avdec_mpeg4 ! queue ! videoconvert ! queue ! xvimagesink')
+    run_pipeline('udpsrc port=6000 caps="application/x-rtp, payload=96,clock-rate=90000, framerate=60/1" ! rtpjitterbuffer drop-on-latency=false latency=500 ! rtpmp4vdepay ! avdec_mpeg4 ! queue ! videoconvert ! queue ! xvimagesink')
 
 except Exception as e:
     print(e)
